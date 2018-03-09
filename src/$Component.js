@@ -5,12 +5,13 @@ function $Component(name, orientation, $el){
 	$c.addClass(""+name+"-component");
 	$c.append($el);
 	$c.attr("touch-action", "none");
-	
+
 	$c.appendTo({
 		tall: $left,
 		wide: $bottom,
+		top: $top,
 	}[orientation]);
-	
+
 	var $w = new $Window($c);
 	$w.title(name);
 	$w.hide();
@@ -18,44 +19,44 @@ function $Component(name, orientation, $el){
 		tall: "vertical",
 		wide: "horizontal",
 	}[orientation]);
-	
+
 	// Nudge the Colors component over a tiny bit
 	if(name === "Colors"){
 		$c.css("position", "relative");
 		$c.css("left", "3px");
 	}
-	
+
 	var ox, oy;
 	var w, h;
 	var pos = 0;
 	var pos_axis;
-	
+
 	if(orientation === "tall"){
 		pos_axis = "top";
 	}else{
 		pos_axis = "left";
 	}
-	
+
 	var dock_to = function($dock_to){
 		$w.hide();
-		
+
 		$dock_to.append($c);
-		
+
 		pos = Math.max(pos, 0);
 		if(pos_axis === "top"){
 			pos = Math.min(pos, $dock_to.height() - $c.height());
 		}else{
 			pos = Math.min(pos, $dock_to.width() - $c.width());
 		}
-		
+
 		$c.css("position", "relative");
 		$c.css(pos_axis, pos);
-		
+
 		// Save where it's now docked to
 		$last_docked_to = $dock_to;
 		last_docked_to_pos = pos;
 	};
-	
+
 	var last_docked_to_pos;
 	var $last_docked_to;
 	var $dock_to;
@@ -64,20 +65,20 @@ function $Component(name, orientation, $el){
 		// Only start a drag via a left click directly on the component element
 		if(e.button !== 0){ return; }
 		if(!$c.is(e.target)){ return; }
-		
+
 		$G.on("pointermove", drag_onpointermove);
 		$G.one("pointerup", function(e){
 			$G.off("pointermove", drag_onpointermove);
 			drag_onpointerup(e);
 		});
-		
+
 		var rect = $c[0].getBoundingClientRect();
 		// Make sure these dimensions are odd numbers
 		w = (~~(rect.width/2))*2 + 1;
 		h = (~~(rect.height/2))*2 + 1;
 		ox = rect.left - e.clientX;
 		oy = rect.top - e.clientY;
-		
+
 		if(!$ghost){
 			$ghost = $(E("div")).addClass("component-ghost dock");
 			$ghost.css({
@@ -90,19 +91,19 @@ function $Component(name, orientation, $el){
 			});
 			$ghost.appendTo("body");
 		}
-		
+
 		// Prevent text selection anywhere within the component
 		e.preventDefault();
 	});
 	var drag_onpointermove = function(e){
-		
+
 		$ghost.css({
 			left: e.clientX + ox,
 			top: e.clientY + oy,
 		});
-		
+
 		$dock_to = null;
-		
+
 		var ghost_rect = $ghost[0].getBoundingClientRect();
 		var q = 5;
 		if(orientation === "tall"){
@@ -123,7 +124,7 @@ function $Component(name, orientation, $el){
 			}
 		}
 		pos = ghost_rect[pos_axis];
-		
+
 		if($dock_to){
 			var dock_to_rect = $dock_to[0].getBoundingClientRect();
 			pos -= dock_to_rect[pos_axis];
@@ -131,14 +132,14 @@ function $Component(name, orientation, $el){
 		}else{
 			$ghost.removeClass("dock");
 		}
-		
+
 		e.preventDefault();
 	};
-	
+
 	var drag_onpointerup = function(e){
-		
+
 		$w.hide();
-		
+
 		// If the component is docked to a component area (a side)
 		if($c.parent().is(".component-area")){
 			// Save where it's docked so we can dock back later
@@ -147,14 +148,14 @@ function $Component(name, orientation, $el){
 				last_docked_to_pos = pos;
 			}
 		}
-		
+
 		if($dock_to){
 			// Dock component to $dock_to
 			dock_to($dock_to);
 		}else{
 			$c.css("position", "relative");
 			$c.css(pos_axis, "");
-			
+
 			// Put the component in the window
 			$w.$content.append($c);
 			// Show and position the window
@@ -168,18 +169,18 @@ function $Component(name, orientation, $el){
 				top: e.clientY + oy - dy,
 			});
 		}
-		
+
 		$ghost && $ghost.remove();
 		$ghost = null;
-		
+
 		$G.trigger("resize");
 	};
-	
+
 	$c.dock = function(){
 		pos = last_docked_to_pos;
 		dock_to($last_docked_to);
 	};
-	
+
 	$c.show = function(){
 		$($c[0]).show();
 		if($.contains($w[0], $c[0])){
@@ -199,11 +200,11 @@ function $Component(name, orientation, $el){
 		}
 		return $c;
 	};
-	
+
 	$w.on("close", function(e){
 		e.preventDefault();
 		$w.hide();
 	});
-	
+
 	return $c;
 }

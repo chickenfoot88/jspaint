@@ -2,15 +2,17 @@
 $MenuBar.DIVIDER = "DIVIDER";
 
 function $MenuBar(menus){
-	
+
 	var $ = jQuery;
 	var $G = $(self);
-	
+
+	// Обертка для меню
 	var $menus = $(E("div")).addClass("menus");
-	
+
 	$menus.attr("touch-action", "none");
+
 	var selecting_menus = false;
-	
+
 	var _html = function(menus_key){
 		return menus_key.replace(/&(.)/, function(m){
 			return "<span class='menu-hotkey'>" + m[1] + "</span>";
@@ -19,13 +21,13 @@ function $MenuBar(menus){
 	var _hotkey = function(menus_key){
 		return menus_key[menus_key.indexOf("&")+1].toUpperCase();
 	};
-	
+
 	var close_menus = function(){
 		$menus.find(".menu-button").trigger("release");
 		// Close any rogue floating submenus
 		$(".menu-popup").hide();
 	};
-	
+
 	var is_disabled = function(item){
 		if(typeof item.enabled === "function"){
 			return !item.enabled();
@@ -35,12 +37,12 @@ function $MenuBar(menus){
 			return false;
 		}
 	};
-	
+
 	// TODO: API for context menus (i.e. floating menu popups)
 	function $MenuPopup(menu_items){
 		var $menu_popup = $(E("div")).addClass("menu-popup");
 		var $menu_popup_table = $(E("table")).addClass("menu-popup-table").appendTo($menu_popup);
-		
+
 		$.map(menu_items, function(item){
 			var $row = $(E("tr")).addClass("menu-row").appendTo($menu_popup_table)
 			if(item === $MenuBar.DIVIDER){
@@ -52,14 +54,14 @@ function $MenuBar(menus){
 				var $label = $(E("td")).addClass("menu-item-label");
 				var $shortcut = $(E("td")).addClass("menu-item-shortcut");
 				var $submenu_area = $(E("td")).addClass("menu-item-submenu-area");
-				
+
 				$item.append($checkbox_area, $label, $shortcut, $submenu_area);
-				
+
 				$item.attr("tabIndex", -1);
-				
+
 				$label.html(_html(item.item));
 				$shortcut.text(item.shortcut);
-				
+
 				$menu_popup.on("update", function(){
 					$item.attr("disabled", is_disabled(item));
 					if(item.checkbox && item.checkbox.check){
@@ -70,17 +72,17 @@ function $MenuBar(menus){
 					$menu_popup.triggerHandler("update");
 					$item.focus();
 				});
-				
+
 				if(item.checkbox){
 					$checkbox_area.text("✓");
 				}
-				
+
 				if(item.submenu){
 					$submenu_area.html('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="11" viewBox="0 0 10 11" style="fill:currentColor;display:inline-block;vertical-align:middle"><path d="M7.5 4.33L0 8.66L0 0z"/></svg>');
-					
+
 					var $submenu_popup = $MenuPopup(item.submenu).appendTo("body");
 					$submenu_popup.hide();
-					
+
 					var open_submenu = function(){
 						$submenu_popup.show();
 						$submenu_popup.triggerHandler("update");
@@ -110,8 +112,10 @@ function $MenuBar(menus){
 						}, 200);
 					});
 					$item.on("click pointerdown", open_submenu);
+
+
 				}
-				
+
 				var item_action = function(){
 					if(item.checkbox){
 						if(item.checkbox.toggle){
@@ -142,7 +146,7 @@ function $MenuBar(menus){
 						$menu_popup.closest(".menu-container").find(".menu-button").focus();
 					}
 				});
-				
+
 				$item.on("keydown", function(e){
 					if(e.ctrlKey || e.shiftKey || e.altKey){
 						return;
@@ -152,7 +156,7 @@ function $MenuBar(menus){
 						item_action();
 					}
 				});
-				
+
 				$menu_popup.on("keydown", function(e){
 					if(e.ctrlKey || e.shiftKey || e.altKey){
 						return;
@@ -164,18 +168,24 @@ function $MenuBar(menus){
 				});
 			}
 		});
-		
+
 		return $menu_popup;
 	}
-	
+
 	var this_click_opened_the_menu = false;
 	$.each(menus, function(menus_key, menu_items){
 		var $menu_container = $(E("div")).addClass("menu-container").appendTo($menus);
-		var $menu_button = $(E("div")).addClass("menu-button").appendTo($menu_container);
+		var $menu_button = $(E("div")).addClass("menu-button hidden").appendTo($menu_container);
 		var $menu_popup = $MenuPopup(menu_items).appendTo($menu_container);
-		
+
+		if (menus_key == "&Undo") {
+			$menu_container.addClass("undo-container");
+		}
+
 		var menu_id = menus_key.replace("&", "").replace(/ /g, "-").toLowerCase();
+		console.log(menus_key);
 		$menu_button.addClass("" + menu_id + "-menu-button");
+		$menu_button.attr("title", menu_id);
 		if(menu_id == "extras"){
 			// TODO: refactor shared key string, move to function
 			try{
@@ -184,7 +194,7 @@ function $MenuBar(menus){
 				}
 			}catch(e){}
 		}
-		
+
 		$menu_popup.hide();
 		$menu_button.html(_html(menus_key));
 		$menu_button.attr("tabIndex", -1)
@@ -252,16 +262,16 @@ function $MenuBar(menus){
 					this_click_opened_the_menu = true;
 				}
 			}
-			
+
 			close_menus();
-			
+
 			$menu_button.focus();
 			$menu_button.addClass("active");
 			$menu_popup.show();
 			$menu_popup.triggerHandler("update");
-			
+
 			selecting_menus = true;
-			
+
 			$menus.triggerHandler("info", "");
 		});
 		$menu_button.on("pointerup", function(e){
@@ -275,13 +285,14 @@ function $MenuBar(menus){
 		});
 		$menu_button.on("release", function(e){
 			selecting_menus = false;
-			
+
 			$menu_button.removeClass("active");
 			$menu_popup.hide();
-			
+
 			$menus.triggerHandler("default-info");
 		});
 	});
+
 	$G.on("keypress", function(e){
 		if(e.keyCode === 27){ // Esc
 			close_menus();
@@ -297,7 +308,7 @@ function $MenuBar(menus){
 			close_menus();
 		}
 	});
-	
+
 	return $menus;
 
 }

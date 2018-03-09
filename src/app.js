@@ -69,12 +69,12 @@ var $canvas_handles = $Handles($canvas_area, canvas, {
 	size_only: true
 });
 
-var $top = $(E("div")).addClass("component-area").prependTo($V);
-var $bottom = $(E("div")).addClass("component-area").appendTo($V);
+var $top = $(E("div")).addClass("component-area component-area-top").prependTo($V);
+var $bottom = $(E("div")).addClass("component-area hidden").appendTo($V);
 var $left = $(E("div")).addClass("component-area").prependTo($H);
 var $right = $(E("div")).addClass("component-area").appendTo($H);
 
-var $status_area = $(E("div")).addClass("status-area").appendTo($V);
+var $status_area = $(E("div")).addClass("status-area hidden").appendTo($V);
 var $status_text = $(E("div")).addClass("status-text").appendTo($status_area);
 var $status_position = $(E("div")).addClass("status-coordinates").appendTo($status_area);
 var $status_size = $(E("div")).addClass("status-coordinates").appendTo($status_area);
@@ -106,7 +106,7 @@ $canvas.on("user-resized", function(e, _x, _y, width, height){
 		canvas.width = Math.max(1, width);
 		canvas.height = Math.max(1, height);
 		ctx.disable_image_smoothing();
-		
+
 		if(!transparency){
 			ctx.fillStyle = colors.background;
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -193,7 +193,7 @@ $G.on("keydown", function(e){
 	// TODO: preventDefault in all cases where the event is handled
 	// also, ideally check that modifiers *aren't* pressed
 	// probably best to use a library at this point!
-	
+
 	// TODO: probably get rid of this silly feature
 	// it's kinda fun, but it's a lot of code for something I've virtually never used
 	// (and it's not based on any version of mspaint, it was just a fun idea I had)
@@ -258,7 +258,7 @@ $G.on("keydown", function(e){
 		//find key codes
 		window.console && console.log(e.keyCode);
 	}
-	
+
 	if(selection){
 		var nudge_selection = function(delta_x, delta_y){
 			selection.x += delta_x;

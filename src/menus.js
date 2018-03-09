@@ -401,6 +401,18 @@ var menus = {
 			//description: "Displays program information, version number, and copyright.",
 		}
 	],
+	"&Undo": [
+		{
+			item: "&Undo",
+			shortcut: "Ctrl+Z",
+			enabled: function(){
+				return undos.length >= 1;
+			},
+			action: undo,
+			description: "Undoes the last action.",
+			classname: "undo-btn"
+		}
+	],
 	"E&xtras": [
 		{
 			item: "&Render History As GIF",

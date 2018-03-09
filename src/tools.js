@@ -4,16 +4,16 @@ tools = [{
 	description: "Selects a free-form part of the picture to move, copy, or edit.",
 	cursor: ["precise", [16, 16], "crosshair"],
 	// passive: @TODO,
-	
+
 	// The vertices of the polygon
 	points: [],
-	
+
 	// The boundaries of the polygon
 	x_min: +Infinity,
 	x_max: -Infinity,
 	y_min: +Infinity,
 	y_max: -Infinity,
-	
+
 	pointerdown: function(){
 		var tool = this;
 		tool.x_min = pointer.x;
@@ -21,7 +21,7 @@ tools = [{
 		tool.y_min = pointer.y;
 		tool.y_max = pointer.y+1;
 		tool.points = [];
-		
+
 		// End prior selection, drawing it to the canvas
 		deselect();
 		// Checkpoint so we can roll back inverty brush
@@ -54,26 +54,26 @@ tools = [{
 	},
 	continuous: "space",
 	paint: function(ctx, x, y){
-		
+
 		// Constrain the inverty paint brush position to the canvas
 		x = Math.min(canvas.width, x);
 		x = Math.max(0, x);
 		y = Math.min(canvas.height, y);
 		y = Math.max(0, y);
-		
+
 		// Find the dimensions on the canvas of the tiny square to invert
 		var inverty_size = 2;
 		var rect_x = ~~(x - inverty_size/2);
 		var rect_y = ~~(y - inverty_size/2);
 		var rect_w = inverty_size;
 		var rect_h = inverty_size;
-		
+
 		var ctx_src = undos[undos.length-1].getContext("2d");//psh
-		
+
 		// Make two tiny ImageData objects,
 		var id_dest = ctx.getImageData(rect_x, rect_y, rect_w, rect_h);
 		var id_src = ctx_src.getImageData(rect_x, rect_y, rect_w, rect_h);
-		
+
 		for(var i=0, l=id_dest.data.length; i<l; i+=4){
 			id_dest.data[i+0] = 255 - id_src.data[i+0];
 			id_dest.data[i+1] = 255 - id_src.data[i+1];
@@ -81,14 +81,14 @@ tools = [{
 			id_dest.data[i+3] = 255;
 			// @TODO maybe: invert based on id_src.data[i+3] and the background
 		}
-		
+
 		ctx.putImageData(id_dest, rect_x, rect_y);
-		
+
 	},
 	pointerup: function(){
 		// Revert the inverty brush paint
 		ctx.copy(undos[undos.length-1]);
-		
+
 		// Cut out the polygon
 		var cutout = cut_polygon(
 			this.points,
@@ -97,7 +97,7 @@ tools = [{
 			this.x_max,
 			this.y_max
 		);
-		
+
 		// Make the selection
 		selection = new Selection(
 			this.x_min,
@@ -151,7 +151,7 @@ tools = [{
 	},
 	pointerup: function(){
 		if(!selection){ return; }
-		
+
 		if(ctrl){
 			selection.crop();
 			selection.destroy();
@@ -166,64 +166,15 @@ tools = [{
 		selection = null;
 	},
 	$options: $choose_transparency
-}, {
-	name: "Eraser/Color Eraser",
-	description: "Erases a portion of the picture, using the selected eraser shape.",
-	cursor: ["precise", [16, 16], "crosshair"],
-	// @TODO: draw square on canvas as cursor
-	continuous: "space",
-	paint: function(ctx, x, y){
-		
-		var rect_x = ~~(x - eraser_size/2);
-		var rect_y = ~~(y - eraser_size/2);
-		var rect_w = eraser_size;
-		var rect_h = eraser_size;
-		
-		if(button === 0){
-			// Eraser
-			if(transparency){
-				ctx.clearRect(rect_x, rect_y, rect_w, rect_h);
-			}else{
-				ctx.fillStyle = colors.background;
-				ctx.fillRect(rect_x, rect_y, rect_w, rect_h);
-			}
-		}else{
-			// Color Eraser
-			// Right click with the eraser to selectively replace
-			// the selected foreground color with the selected background color
-			
-			var fg_rgba = get_rgba_from_color(colors.foreground);
-			var bg_rgba = get_rgba_from_color(colors.background);
-			
-			var id = ctx.getImageData(rect_x, rect_y, rect_w, rect_h);
-			
-			for(var i=0, l=id.data.length; i<l; i+=4){
-				if(
-					id.data[i+0] === fg_rgba[0] &&
-					id.data[i+1] === fg_rgba[1] &&
-					id.data[i+2] === fg_rgba[2] &&
-					id.data[i+3] === fg_rgba[3]
-				){
-					id.data[i+0] = bg_rgba[0];
-					id.data[i+1] = bg_rgba[1];
-					id.data[i+2] = bg_rgba[2];
-					id.data[i+3] = bg_rgba[3];
-				}
-			}
-			
-			ctx.putImageData(id, rect_x, rect_y);
-		}
-	},
-	$options: $choose_eraser_size
-}, {
+},{
 	name: "Fill With Color",
 	description: "Fills an area with the selected drawing color.",
 	cursor: ["fill-bucket", [8, 22], "crosshair"],
 	pointerdown: function(ctx, x, y){
-		
+
 		// Get the rgba values of the selected fill color
 		var rgba = get_rgba_from_color(fill_color);
-		
+
 		if(shift){
 			// Perform a global (non-contiguous) fill operation, AKA color replacement
 			draw_noncontiguous_fill(ctx, x, y, rgba[0], rgba[1], rgba[2], rgba[3]);
@@ -238,7 +189,7 @@ tools = [{
 	cursor: ["eye-dropper", [9, 22], "crosshair"],
 	deselect: true,
 	passive: true,
-	
+
 	current_color: "",
 	display_current_color: function(){
 		this.$options.css({
@@ -318,7 +269,7 @@ tools = [{
 
 			brush_ctx.fillStyle = brush_ctx.strokeStyle = stroke_color;
 			render_brush(brush_ctx, brush_shape, brush_size);
-			
+
 			this.rendered_color = stroke_color;
 			this.rendered_size = brush_size;
 			this.rendered_shape = brush_shape;
@@ -435,11 +386,11 @@ tools = [{
 	},
 	paint: function(ctx, x, y){
 		if(this.points.length < 1){ return; }
-		
+
 		var i = this.points.length - 1;
 		this.points[i].x = x;
 		this.points[i].y = y;
-		
+
 		ctx.beginPath();
 		ctx.moveTo(this.points[0].x, this.points[0].y);
 		if(this.points.length === 4){
@@ -492,25 +443,74 @@ tools = [{
 	},
 	$options: $ChooseShapeStyle()
 }, {
+	name: "Eraser/Color Eraser",
+	description: "Erases a portion of the picture, using the selected eraser shape.",
+	cursor: ["precise", [16, 16], "crosshair"],
+	// @TODO: draw square on canvas as cursor
+	continuous: "space",
+	paint: function(ctx, x, y){
+
+		var rect_x = ~~(x - eraser_size/2);
+		var rect_y = ~~(y - eraser_size/2);
+		var rect_w = eraser_size;
+		var rect_h = eraser_size;
+
+		if(button === 0){
+			// Eraser
+			if(transparency){
+				ctx.clearRect(rect_x, rect_y, rect_w, rect_h);
+			}else{
+				ctx.fillStyle = colors.background;
+				ctx.fillRect(rect_x, rect_y, rect_w, rect_h);
+			}
+		}else{
+			// Color Eraser
+			// Right click with the eraser to selectively replace
+			// the selected foreground color with the selected background color
+
+			var fg_rgba = get_rgba_from_color(colors.foreground);
+			var bg_rgba = get_rgba_from_color(colors.background);
+
+			var id = ctx.getImageData(rect_x, rect_y, rect_w, rect_h);
+
+			for(var i=0, l=id.data.length; i<l; i+=4){
+				if(
+					id.data[i+0] === fg_rgba[0] &&
+					id.data[i+1] === fg_rgba[1] &&
+					id.data[i+2] === fg_rgba[2] &&
+					id.data[i+3] === fg_rgba[3]
+				){
+					id.data[i+0] = bg_rgba[0];
+					id.data[i+1] = bg_rgba[1];
+					id.data[i+2] = bg_rgba[2];
+					id.data[i+3] = bg_rgba[3];
+				}
+			}
+
+			ctx.putImageData(id, rect_x, rect_y);
+		}
+	},
+	$options: $choose_eraser_size
+}, {
 	name: "Polygon",
 	description: "Draws a polygon with the selected fill style.",
 	cursor: ["precise", [16, 16], "crosshair"],
-	
+
 	// Record the last click for double-clicking
 	// A double click happens on pointerdown of a second click
 	// (within a cylindrical volume in 2d space + 1d time)
 	last_click_pointerdown: {x: -Infinity, y: -Infinity, time: -Infinity},
 	last_click_pointerup: {x: -Infinity, y: -Infinity, time: -Infinity},
-	
+
 	// The vertices of the polygon
 	points: [],
-	
+
 	// The boundaries of the polygon
 	x_min: +Infinity,
 	x_max: -Infinity,
 	y_min: +Infinity,
 	y_max: -Infinity,
-	
+
 	passive: function(){
 		// actions are passive if you've already started using the tool
 		// but the first action should be undoable
@@ -519,7 +519,7 @@ tools = [{
 	},
 	pointerup: function(ctx, x, y){
 		if(this.points.length < 1){ return; }
-		
+
 		var i = this.points.length - 1;
 		this.points[i].x = x;
 		this.points[i].y = y;
@@ -529,26 +529,26 @@ tools = [{
 		if(d < stroke_size * 5.1010101){ // arbitrary 101
 			this.complete(ctx, x, y);
 		}
-		
+
 		this.last_click_pointerup = {x: x, y: y, time: +(new Date)};
 	},
 	pointerdown: function(ctx, x, y){
 		var tool = this;
-		
+
 		if(tool.points.length < 1){
 			tool.x_min = x;
 			tool.x_max = x+1;
 			tool.y_min = y;
 			tool.y_max = y+1;
 			tool.points = [];
-			
+
 			// @TODO: stop needing this:
 			tool.canvas_base = canvas;
-			
+
 			undoable(function(){
 				// @TODO: stop needing this:
 				tool.canvas_base = undos[undos.length-1];
-				
+
 				// Add the first point of the polygon
 				tool.points.push({x: x, y: y});
 				// Add a second point so first action draws a line
@@ -582,16 +582,16 @@ tools = [{
 	},
 	paint: function(ctx, x, y){
 		if(this.points.length < 1){ return; }
-		
+
 		// Clear the canvas to the previous image to get
 		// rid of lines drawn while constructing the shape
 		// @TODO: stop needing this
 		ctx.copy(this.canvas_base);
-		
+
 		var i = this.points.length - 1;
 		this.points[i].x = x;
 		this.points[i].y = y;
-		
+
 		ctx.fillStyle = stroke_color;
 		for(var i=0, j=1; j<this.points.length; i++, j++){
 			draw_line(ctx,
@@ -603,12 +603,12 @@ tools = [{
 	},
 	complete: function(ctx, x, y){
 		if(this.points.length < 1){ return; }
-		
+
 		// Clear the canvas to the previous image to get
 		// rid of lines drawn while constructing the shape
 		// @TODO: stop needing this
 		ctx.copy(this.canvas_base);
-		
+
 		// Draw an antialiased polygon
 		ctx.beginPath();
 		ctx.moveTo(this.points[0].x, this.points[0].y);
@@ -617,7 +617,7 @@ tools = [{
 		}
 		ctx.lineTo(this.points[0].x, this.points[0].y);
 		ctx.closePath();
-		
+
 		ctx.lineWidth = stroke_size;
 		ctx.lineJoin = "bevel";
 		if(this.$options.fill){
@@ -628,14 +628,14 @@ tools = [{
 			ctx.strokeStyle = stroke_color;
 			ctx.stroke();
 		}
-		
+
 		/*
 		if(this.$options.fill){
 			// Make a solid-colored canvas
 			var colored_canvas = new Canvas(canvas.width, canvas.height);
 			colored_canvas.ctx.fillStyle = fill_color;
 			colored_canvas.ctx.fillRect(0, 0, canvas.width, canvas.height);
-			
+
 			for(var i=0; i<this.points.length; i++){
 				// Update the boundaries of the polygon
 				// @TODO: this boundary stuff in less places (DRY)
@@ -644,7 +644,7 @@ tools = [{
 				this.y_min = Math.min(this.points[i].y, this.y_min);
 				this.y_max = Math.max(this.points[i].y, this.y_max);
 			}
-			
+
 			// Cut a colored polygon out of the solid-colored canvas
 			var colored_polygon = cut_polygon(
 				this.points,
@@ -655,10 +655,10 @@ tools = [{
 				colored_canvas,
 				0.25
 			);
-			
+
 			// Draw the colored polygon to the canvas
 			ctx.drawImage(colored_polygon, this.x_min, this.y_min);
-			
+
 		}
 		if(this.$options.stroke){
 			ctx.fillStyle = stroke_color;
@@ -678,7 +678,7 @@ tools = [{
 			);
 		}
 		*/
-		
+
 		this.reset();
 	},
 	cancel: function(){
@@ -710,7 +710,7 @@ tools = [{
 		if(w < 0){ x += w; w = -w; }
 		if(h < 0){ y += h; h = -h; }
 		var radius = Math.min(7, w/2, h/2);
-		
+
 		draw_rounded_rectangle(ctx, x, y, w, h, radius);
 	},
 	$options: $ChooseShapeStyle()

@@ -1,7 +1,7 @@
 (function() {
 	/* global window, document, $ */
 	/** @todo: refactor localStorage to use the src/storage.js module */
-	var default_theme = "classic.css";
+	var default_theme = "custom.css";
 	var theme_storage_key = "jspaint theme";
 	var current_theme = get_current_theme();
 	var theme_link = create_theme_link_element(href_for(current_theme));
